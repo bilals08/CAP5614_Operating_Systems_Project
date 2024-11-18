@@ -1,0 +1,53 @@
+a) Installation experience
+
+We tested the installation in two environments, WSL and Wolf remote access. For the WSL,  the installation went smoothly, with only a few hiccups encountered along the way. In order to access a UNIX shell, WSL was used on a 64-bit Windows 11 machine. Initial attempts at installation were met with difficulty as GCC was not yet installed. Once all the necessary libraries were installed, the make command executed successfully. For the wolf, we accessed the wolf using ssh, downloaded the desired nachos file from the provided link, unzipped the file, and installed it. It went smoothly and we were able to access and run it.  
+
+b) Testing Experience
+
+All tests ran accordingly: the ./nachos command on the thread directory mirrored the results from the document provided. The halt test also ran without any issues, with and without step-mode; the results are provided below. We also ran the ./nachos -x ../test/halt in the userprog directory and it ran the halt program successfully. We also ran ./nachos -s -x ../test/halt to see how to run it in a single-step mode. In single-step mode, the simulation pauses after each instruction is executed, allowing to observe and debug the system’s behaviour step by step. The outputs are shown below.
+
+----------------------------------------------------------------------
+Assuming the program completed.
+Machine halting!
+
+Ticks: total 130, idle 0, system 130, user 0
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: faults 0
+Network I/O: packets received 0, sent 0
+
+Cleaning up...
+
+----------------------------------------------------------------------
+
+Machine halting!
+
+Ticks: total 22, idle 0, system 10, user 12
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: faults 0
+Network I/O: packets received 0, sent 0
+
+Cleaning up...
+
+----------------------------------------------------------------------
+Time: 18, interrupts on
+Pending interrupts:
+End of pending interrupts
+Machine registers:
+        0:      0x0     1:      0x0     2:      0x0     3:      0x0
+        4:      0x0     5:      0x0     6:      0x0     7:      0x0
+        8:      0x0     9:      0x0     10:     0x0     11:     0x0
+        12:     0x0     13:     0x0     14:     0x0     15:     0x0
+        16:     0x0     17:     0x0     18:     0x0     19:     0x0
+        20:     0x0     21:     0x0     22:     0x0     23:     0x0
+        24:     0x0     25:     0x0     26:     0x0     27:     0x0
+        28:     0x0     SP(29): 0x4d8   30:     0x4d8   RA(31): 0xe4
+        Hi:     0x0     Lo:     0x0
+        PC:     0xc4    NextPC: 0xe4    PrevPC: 0xc0
+        Load:   0x0     LoadV:  0x0
+
+----------------------------------------------------------------------
+
+c)  Description about thread class
+The thread class in Nachos contain the data structures to implement and run the thread functionality. It runs a sequential state of code within a program. The state of a thread includes the program counter, processor registers, and the execution stack. Moreover, it represents a stack initialised with the fixed size, so the stack overflow and segmentation fault issues can occur. It is recommended to initialise the data structures with dynamic size. This class maintains an enum {JUST_CREATED, RUNNING, READY, BLOCKED} to check the thread's state. It contains stackTop and machineState variables to handle registers and stack states. It has some important functions to perform the tasks. e.g Fork() runs a thread, Yield() relinquishes the cpu if other threads are runnable, Sleep() puts the thread to sleep, Finish() ends the thread after the job is done, CheckOverflow() checks the overflow state of stack, and some other functions to handle the states of thread, printing and initialising. The thread class is handling the overall functionality to create and destroy threads in the Nachos Operating System.

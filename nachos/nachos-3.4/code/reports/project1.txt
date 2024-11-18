@@ -1,0 +1,14 @@
+Members:
+- Aakif Ahamath Mohamed Ihsanullah
+- Muhammad Bilal Shabbir
+- Robert Orfao
+
+Exercise 1 (Completed): We first created a ThreadTest to take an argument and ran it successfuly. Then, semaphores were implemented and tested using SimpleThread function through the use of a mutex variable initialized to 1. The semephore construct is also used to implement a barrier that ensures all threads finish at the same time at the end. Use DHW1_SEMAPHORES directive to test it.
+
+Exercise 2 (Completed): The Lock class was created and tested successfully using SimpleThread, and has a similar output to that of Semaphores. An "owner" variable is used to keep track of the current thread, so the release operation can only be invoked by that thread. A queue keeps track of all waiting threads, and free represents is it is unlocked or not. Use DHW1_LOCK directive to test it.
+
+Exercise 3 (Completed): Condition variables were implemented with a mutex to synchronize threads efficiently. Threads wait for specific conditions before proceeding, and spurious wakeups are handled by rechecking the condition in a loop. We tested it on the PingPong test as well. Use DHW1_LOCK directive to test it.
+
+Exercise 4 (Completed) : The elevator system was designed using locks and condition variables to handle multiple requests concurrently. The system prioritizes requests to minimize wait times, while condition variables manage the elevator's state and signal users when it reaches their floor. The implementation runs efficiently, handling concurrent requests without deadlocks. We tested it using ElevatorTest. Moreover, we put a sleep for 1 second in the code so it can be tested efficiently. Use DHW1_ELEVATOR directive to test it. And when the lift reaches to maximum floor, it does not go back to 0, rather it starts runnng backwardly, which should be the case for actual lift.
+
+
