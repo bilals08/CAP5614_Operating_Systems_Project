@@ -3,6 +3,7 @@
 PCBManager::PCBManager(int maxProcesses) {
     bitmap = new BitMap(maxProcesses);
     pcbs = new PCB*[maxProcesses];
+    pcbManagerLock = new Lock("pcbManager");
 }
 
 PCBManager::~PCBManager() {

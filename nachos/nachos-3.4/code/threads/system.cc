@@ -133,6 +133,13 @@ Initialize(int argc, char **argv)
 #endif
     }
 
+    #ifdef USER_PROGRAM
+        machine = new Machine(debugUserProg);	// this must come first
+        mm = new MemoryManager();
+        mmLock = new Lock("mmLock");
+        pcbManager = new PCBManager(MAX_PROCESSES);
+    #endif
+
     DebugInit(debugArgs);			// initialize DEBUG messages
     stats = new Statistics();			// collect statistics
     interrupt = new Interrupt;			// start up interrupt handling
@@ -156,12 +163,7 @@ Initialize(int argc, char **argv)
     interrupt->Enable();
     CallOnUserAbort(Cleanup);			// if user hits ctl-C
     
-#ifdef USER_PROGRAM
-    machine = new Machine(debugUserProg);	// this must come first
-    mm = new MemoryManager();
-    mmLock = new Lock("mmLock");
-    pcbManager = new PCBManager(MAX_PROCESSES);
-#endif
+
 
 #ifdef FILESYS
     synchDisk = new SynchDisk("DISK");
