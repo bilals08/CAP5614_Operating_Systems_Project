@@ -1,18 +1,18 @@
 // exception.cc 
-//	Entry point into the Nachos kernel from user programs.
-//	There are two kinds of things that can cause control to
-//	transfer back to here from user code:
+//  Entry point into the Nachos kernel from user programs.
+//  There are two kinds of things that can cause control to
+//  transfer back to here from user code:
 //
-//	syscall -- The user code explicitly requests to call a procedure
-//	in the Nachos kernel.  Right now, the only function we support is
-//	"Halt".
+//  syscall -- The user code explicitly requests to call a procedure
+//  in the Nachos kernel.  Right now, the only function we support is
+//  "Halt".
 //
-//	exceptions -- The user code does something that the CPU can't handle.
-//	For instance, accessing memory that doesn't exist, arithmetic errors,
-//	etc.  
+//  exceptions -- The user code does something that the CPU can't handle.
+//  For instance, accessing memory that doesn't exist, arithmetic errors,
+//  etc.  
 //
-//	Interrupts (which can also cause control to transfer from user
-//	code into the Nachos kernel) are handled elsewhere.
+//  Interrupts (which can also cause control to transfer from user
+//  code into the Nachos kernel) are handled elsewhere.
 //
 // For now, this only handles the Halt() system call.
 // Everything else core dumps.
@@ -28,25 +28,25 @@
 
 //----------------------------------------------------------------------
 // ExceptionHandler
-// 	Entry point into the Nachos kernel.  Called when a user program
-//	is executing, and either does a syscall, or generates an addressing
-//	or arithmetic exception.
+//  Entry point into the Nachos kernel.  Called when a user program
+//  is executing, and either does a syscall, or generates an addressing
+//  or arithmetic exception.
 //
-// 	For system calls, the following is the calling convention:
+//  For system calls, the following is the calling convention:
 //
-// 	system call code -- r2
-//		arg1 -- r4
-//		arg2 -- r5
-//		arg3 -- r6
-//		arg4 -- r7
+//  system call code -- r2
+//      arg1 -- r4
+//      arg2 -- r5
+//      arg3 -- r6
+//      arg4 -- r7
 //
-//	The result of the system call, if any, must be put back into r2. 
+//  The result of the system call, if any, must be put back into r2. 
 //
 // And don't forget to increment the pc before returning. (Or else you'll
 // loop making the same system call forever!
 //
-//	"which" is the kind of exception.  The list of possible exceptions 
-//	are in machine.h.
+//  "which" is the kind of exception.  The list of possible exceptions 
+//  are in machine.h.
 //----------------------------------------------------------------------
 
 void incrementPC() {
@@ -71,9 +71,24 @@ void childFunction(int pid) {
            
 }
 
-void doExit() {
+void doExit(int status) {
+
+    
+    currentThread->space->pcb->exitStatus = status;
+
+    // Manage PCB memory As a parent process
+    PCB* pcb = currentThread->space->pcb;
+
+    // Delete exited children and set parent null for non-exited ones
+    pcb->DeleteExitedChildrenSetParentNull();
+
+    // Manage PCB memory As a child process
+    if(pcb->parent == NULL) delete pcb;
+
     delete currentThread->space;
+
     currentThread->Finish();
+
 }
 
 int doFork(int function) {
@@ -115,6 +130,28 @@ int doFork(int function) {
 
 }
 
+int doJoin(int pid) {
+
+    // 1. Check if this is a valid pid and return -1 if not
+    PCB* joinPCB = pcbManager->GetPCB(pid);
+    if (joinPCB == NULL) return -1;
+
+    // 2. Check if pid is a child of current process
+    PCB* pcb = currentThread->space->pcb;
+    if (pcb != joinPCB->parent) return -1;
+
+    // 3. Yield until joinPCB has not exited
+    while(!joinPCB->HasExited()) currentThread->Yield();
+
+    // 4. Store status and delete joinPCB
+    int status = joinPCB->exitStatus;
+    delete joinPCB;
+
+    // 5. return status;
+    return status;
+
+}
+
 void
 ExceptionHandler(ExceptionType which)
 {
@@ -125,14 +162,21 @@ ExceptionHandler(ExceptionType which)
         interrupt->Halt();
     } else if ((which == SyscallException) && (type == SC_Exit)) {
         DEBUG('a', "Exit system call initiated by user program with status %d.\n", machine->ReadRegister(4));
-        doExit();
+        doExit(machine->ReadRegister(4));
     } else if ((which == SyscallException) && (type == SC_Fork)) {
         DEBUG('a', "Fork system call initiated by user program.\n");
         int ret = doFork(machine->ReadRegister(4));
         machine->WriteRegister(2, ret);
         incrementPC();
+    } else if ((which == SyscallException) && (type == SC_Join)) {
+        DEBUG('a', "Fork system call initiated by user program.\n");
+        int ret = doJoin(machine->ReadRegister(4));
+        machine->WriteRegister(2, ret);
+        incrementPC();
+
     } else {
         printf("Unexpected user mode exception %d %d\n", which, type);
         ASSERT(FALSE);
     }
 }
+

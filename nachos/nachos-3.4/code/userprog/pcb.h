@@ -12,8 +12,12 @@ class PCB {
         PCB* parent;
         List* children;
         Thread* thread;
+        int exitStatus;
+
         void AddChild(PCB* child);
         int RemoveChild(PCB* child);
+        bool HasExited();
+        void DeleteExitedChildrenSetParentNull();
 
 };
 
