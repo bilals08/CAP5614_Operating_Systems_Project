@@ -152,6 +152,34 @@ int doJoin(int pid) {
 
 }
 
+int doKill(int pid) 
+{
+    // 1. Check if the pid is valid and if not, return -1
+    PCB* pcb = pcbManager->GetPCB(pid); // Retrieve the PCB for the given PID
+    if (pcb == NULL) 
+    {
+        return -1; // Invalid PID
+    }
+
+    // 2. IF pid is self, then just exit the process
+    if (pcb == currentThread->space->pcb) 
+    {
+        doExit(0); // Exit the current process
+        return 0;
+    }
+
+    // 3. Valid kill, pid exists and not self, do cleanup similar to Exit
+    // However, change references from currentThread to the target thread
+    Thread* targetThread = pcb->thread; // Access the thread associated with the target PCB
+
+    // Perform cleanup actions for the target thread
+    targetThread->Finish(); // Mark the thread for destruction
+
+    // 4. return 0 for success!
+    return 0;
+}
+
+
 void
 ExceptionHandler(ExceptionType which)
 {
@@ -173,7 +201,11 @@ ExceptionHandler(ExceptionType which)
         int ret = doJoin(machine->ReadRegister(4));
         machine->WriteRegister(2, ret);
         incrementPC();
-
+    } else if ((which == SyscallException) && (type == SC_Kill)) {
+        DEBUG('a', "Fork system call initiated by user program.\n");
+        int ret = doKill(machine->ReadRegister(4));
+        machine->WriteRegister(2, ret);
+        incrementPC();
     } else {
         printf("Unexpected user mode exception %d %d\n", which, type);
         ASSERT(FALSE);

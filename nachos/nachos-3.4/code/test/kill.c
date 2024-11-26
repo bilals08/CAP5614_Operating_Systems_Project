@@ -7,11 +7,10 @@ void infinity(){
 
 int main()
 {
-    Exit(0);
-	// int ret;
-	// int id = Fork(infinity);
-	// Yield();
-	// ret = Kill(id);
-	// Exit(ret);
-    //     return ret;
+	int ret;
+	int id = Fork(infinity);
+	Yield();
+	ret = Kill(id);
+	Exit(ret);
+        return ret;
 }
