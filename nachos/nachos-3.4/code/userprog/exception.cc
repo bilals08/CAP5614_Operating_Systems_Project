@@ -71,19 +71,8 @@ void childFunction(int pid) {
            
 }
 
-void doExit(int status) {
+void doExit() {
 
-    
-    currentThread->space->pcb->exitStatus = status;
-
-    // Manage PCB memory As a parent process
-    PCB* pcb = currentThread->space->pcb;
-
-    // Delete exited children and set parent null for non-exited ones
-    pcb->DeleteExitedChildrenSetParentNull();
-
-    // Manage PCB memory As a child process
-    if(pcb->parent == NULL) delete pcb;
 
     delete currentThread->space;
 
@@ -164,7 +153,7 @@ int doKill(int pid)
     // 2. IF pid is self, then just exit the process
     if (pcb == currentThread->space->pcb) 
     {
-        doExit(0); // Exit the current process
+        doExit(); // Exit the current process
         return 0;
     }
 
@@ -190,7 +179,7 @@ ExceptionHandler(ExceptionType which)
         interrupt->Halt();
     } else if ((which == SyscallException) && (type == SC_Exit)) {
         DEBUG('a', "Exit system call initiated by user program with status %d.\n", machine->ReadRegister(4));
-        doExit(machine->ReadRegister(4));
+        doExit();
     } else if ((which == SyscallException) && (type == SC_Fork)) {
         DEBUG('a', "Fork system call initiated by user program.\n");
         int ret = doFork(machine->ReadRegister(4));
