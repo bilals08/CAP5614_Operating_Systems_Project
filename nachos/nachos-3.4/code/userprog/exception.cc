@@ -71,13 +71,14 @@ void childFunction(int pid) {
            
 }
 
-void doExit() {
-
-
+void doExit(int status) {
     delete currentThread->space;
-
     currentThread->Finish();
+    currentThread->space->pcb->exitStatus = status;
+    PCB* pcb = currentThread->space->pcb;
+    pcb->DeleteExitedChildrenSetParentNull();
 
+    if (pcb->parent == NULL) delete pcb;
 }
 
 int doFork(int function) {
@@ -153,7 +154,7 @@ int doKill(int pid)
     // 2. IF pid is self, then just exit the process
     if (pcb == currentThread->space->pcb) 
     {
-        doExit(); // Exit the current process
+        doExit(0); // Exit the current process
         return 0;
     }
 
@@ -169,6 +170,10 @@ int doKill(int pid)
 }
 
 
+void doYield() {
+    currentThread->Yield();
+}
+
 void
 ExceptionHandler(ExceptionType which)
 {
@@ -177,9 +182,13 @@ ExceptionHandler(ExceptionType which)
     if ((which == SyscallException) && (type == SC_Halt)) {
         DEBUG('a', "Shutdown, initiated by user program.\n");
         interrupt->Halt();
+    } else if ((which == SyscallException) && (type == SC_Yield)) {
+         DEBUG('a', "Yield system call initiated by user program.\n");
+        doYield();
+        incrementPC();
     } else if ((which == SyscallException) && (type == SC_Exit)) {
         DEBUG('a', "Exit system call initiated by user program with status %d.\n", machine->ReadRegister(4));
-        doExit();
+        doExit(machine->ReadRegister(4));
     } else if ((which == SyscallException) && (type == SC_Fork)) {
         DEBUG('a', "Fork system call initiated by user program.\n");
         int ret = doFork(machine->ReadRegister(4));

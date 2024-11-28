@@ -20,19 +20,19 @@ int main()
 	global_cnt++;
 
 	Fork(sum);
-	// Yield();
+	Yield();
 
 
 	global_cnt++;
 	Fork(sum);
 
-	// Yield();
+	Yield();
 	
 	global_cnt++;
 	Fork(sum);
 
-	// Yield();
+	Yield();
 	
 	global_cnt++;
-	// Exit(global_cnt); 
+	Exit(global_cnt); 
 }
