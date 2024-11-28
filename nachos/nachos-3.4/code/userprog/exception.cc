@@ -83,7 +83,7 @@ void doExit(int status) {
 
 int doFork(int function) {
     // 1. Check if sufficient memory exists to create new process
-    if (currentThread->space->GetNumPages() <= mm->GetFreePageCount()) {
+    if (currentThread->space->GetNumPages() > mm->GetFreePageCount()) {
         return -1;
     }
 
