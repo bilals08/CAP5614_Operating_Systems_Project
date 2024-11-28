@@ -104,17 +104,19 @@ int doFork(int function) {
     childPCB->parent = parentPCB;
     parentPCB->AddChild(childPCB);
 
+    // machine->ReadRegister(PCReg)
     // 6. Setup machine registers for child and save it to child thread
-    machine->WriteRegister(34, function); // PCReg
-    machine->WriteRegister(35, function+4); // NextPCReg
-    machine->WriteRegister(36, function-4); // PrevPCReg
+    machine->WriteRegister(PCReg, function); // PCReg
+    machine->WriteRegister(NextPCReg, function+4); // NextPCReg
+    machine->WriteRegister(PrevPCReg, function-4); // PrevPCReg
     childThread->SaveUserState();
+
+     // 8. Restore register state of parent user-level process
+    currentThread->RestoreUserState();
 
     // 7. Call thread->fork on child
     childThread->Fork(childFunction, childPCB->pid);
 
-    // 8. Restore register state of parent user-level process
-    currentThread->RestoreUserState();
 
     return childPCB->pid;
 
@@ -174,6 +176,67 @@ void doYield() {
     currentThread->Yield();
 }
 
+int doExec(char* filename) {
+
+    // Use progtest.cc:StartProcess() as a guide
+
+    // 1. Open the file and check validity
+    OpenFile *executable = fileSystem->Open(filename);
+    AddrSpace *space;
+
+    if (executable == NULL) {
+        printf("Unable to open file %s\n", filename);
+        return -1;
+    }
+
+    // 2. Delete current address space but store current PCB first if using in Step 5.
+    PCB* pcb = currentThread->space->pcb;
+    delete currentThread->space;
+
+    // 3. Create new address space
+    space = new AddrSpace(executable);
+
+    // 4.     delete executable;			// close file
+
+    // 5. Check if Addrspace creation was successful
+    if(space->valid != true) {
+    printf("Could not create AddrSpace\n");
+        return -1;
+    }
+
+    // 6. Set the PCB for the new addrspace - reused from deleted address space
+    space->pcb = pcb;
+
+    // 7. Set the addrspace for currentThread
+    currentThread->space = space;
+
+    // 8. Initialize registers for new addrspace
+     space->InitRegisters();		// set the initial register values
+
+    // 9. Initialize the page table
+    space->RestoreState();		// load page table register
+
+    // 10. Run the machine now that all is set up
+    machine->Run();			// jump to the user progam
+    ASSERT(FALSE); // Execution nevere reaches here
+
+    return 0;
+}
+
+
+char* translate(int virtAddr) {
+
+    unsigned int pageNumber = virtAddr / 128;
+    unsigned int pageOffset = virtAddr % 128;
+    unsigned int frameNumber = machine->pageTable[pageNumber].physicalPage;
+    unsigned int physicalAddr = frameNumber*128 + pageOffset;
+
+    char *string = &(machine->mainMemory[physicalAddr]);
+
+    return string;
+
+}
+
 void
 ExceptionHandler(ExceptionType which)
 {
@@ -194,13 +257,20 @@ ExceptionHandler(ExceptionType which)
         int ret = doFork(machine->ReadRegister(4));
         machine->WriteRegister(2, ret);
         incrementPC();
-    } else if ((which == SyscallException) && (type == SC_Join)) {
-        DEBUG('a', "Fork system call initiated by user program.\n");
+    }  else if ((which == SyscallException) && (type == SC_Exec)) {
+         DEBUG('a', "Exec system call initiated by user program.\n");
+        int virtAddr = machine->ReadRegister(4);
+        char* fileName = translate(virtAddr);
+        int ret = doExec(fileName);
+        machine->WriteRegister(2, ret);
+        incrementPC();
+    }else if ((which == SyscallException) && (type == SC_Join)) {
+        DEBUG('a', "Join system call initiated by user program.\n");
         int ret = doJoin(machine->ReadRegister(4));
         machine->WriteRegister(2, ret);
         incrementPC();
     } else if ((which == SyscallException) && (type == SC_Kill)) {
-        DEBUG('a', "Fork system call initiated by user program.\n");
+        DEBUG('a', "Kill system call initiated by user program.\n");
         int ret = doKill(machine->ReadRegister(4));
         machine->WriteRegister(2, ret);
         incrementPC();

@@ -35,6 +35,7 @@ class AddrSpace {
     unsigned int GetNumPages(); // get size of addr space
     TranslationEntry* GetPageTable();
     PCB* pcb;
+    bool valid;
 
   private:
     TranslationEntry *pageTable;	// Assume linear page table translation

@@ -69,7 +69,10 @@ AddrSpace::AddrSpace(OpenFile *executable)
     if ((noffH.noffMagic != NOFFMAGIC) && 
 		(WordToHost(noffH.noffMagic) == NOFFMAGIC))
     	SwapHeader(&noffH);
-    ASSERT(noffH.noffMagic == NOFFMAGIC);
+    if (noffH.noffMagic != NOFFMAGIC){
+        valid = false;
+        return ;
+    }
 
 // how big is address space?
     size = noffH.code.size + noffH.initData.size + noffH.uninitData.size 
@@ -78,7 +81,10 @@ AddrSpace::AddrSpace(OpenFile *executable)
     numPages = divRoundUp(size, PageSize);
     size = numPages * PageSize;
 
-    ASSERT(numPages <= NumPhysPages);		// check we're not trying
+   if(numPages > mm->GetFreePageCount()){
+        valid = false;
+        return;
+    }		// check we're not trying
 						// to run anything too big --
 						// at least until we have
 						// virtual memory
