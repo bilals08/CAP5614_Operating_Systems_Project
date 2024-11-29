@@ -168,9 +168,10 @@ int doKill(int pid)
     // 3. Valid kill, pid exists and not self, do cleanup similar to Exit
     // However, change references from currentThread to the target thread
     Thread* targetThread = pcb->thread; // Access the thread associated with the target PCB
+    scheduler->RemoveThread(targetThread);
 
     // Perform cleanup actions for the target thread
-    targetThread->Finish(); // Mark the thread for destruction
+    // targetThread->Finish(); // Mark the thread for destruction
 
     // 4. return 0 for success!
     return 0;
