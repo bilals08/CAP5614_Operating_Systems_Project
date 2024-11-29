@@ -34,6 +34,7 @@ class AddrSpace {
     void RestoreState();		// info on a context switch 
     unsigned int GetNumPages(); // get size of addr space
     TranslationEntry* GetPageTable();
+    unsigned int Translate(unsigned int virtualAddr);
     PCB* pcb;
     bool valid;
 

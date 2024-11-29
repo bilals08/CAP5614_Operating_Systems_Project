@@ -102,11 +102,14 @@ AddrSpace::AddrSpace(OpenFile *executable)
 	pageTable[i].readOnly = FALSE;  // if the code segment was entirely on 
 					// a separate page, we could set its 
 					// pages to be read-only
-    }
+    
     
 // zero out the entire address space, to zero the unitialized data segment 
 // and the stack segment
-    bzero(machine->mainMemory, size);
+    unsigned int physicalPageAddress = (pageTable[i].physicalPage)*128;
+    bzero(&(machine->mainMemory[physicalPageAddress]), 128);
+    }
+    // bzero(machine->mainMemory, size);
 
 // then, copy in the code and data segments into memory
     if (noffH.code.size > 0) {
@@ -122,6 +125,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
 			noffH.initData.size, noffH.initData.inFileAddr);
     }
 
+    valid = true;
 }
 
 TranslationEntry* AddrSpace::GetPageTable() {
@@ -139,6 +143,7 @@ unsigned int AddrSpace::GetNumPages() {
 
 AddrSpace::AddrSpace(AddrSpace* space)
 {
+    valid = true;
     unsigned int i;
     unsigned int n = space->GetNumPages();
 
@@ -147,10 +152,13 @@ AddrSpace::AddrSpace(AddrSpace* space)
     ASSERT(n <= mm->GetFreePageCount());
 
     pageTable = new TranslationEntry[n];
+    numPages = n;
     
     TranslationEntry* parentPageTable = space->GetPageTable();
+
     
-    pageTable = new TranslationEntry[numPages];
+    
+    // pageTable = new TranslationEntry[numPages];
 
     for (i = 0; i < numPages; i++) {
         pageTable[i].virtualPage = parentPageTable[i].virtualPage;
@@ -233,4 +241,13 @@ void AddrSpace::RestoreState()
 {
     machine->pageTable = pageTable;
     machine->pageTableSize = numPages;
+}
+
+// perform MMU translation to access physical memory
+unsigned int AddrSpace::Translate(unsigned int virtualAddr) {
+        unsigned int pageNumber = virtualAddr/PageSize;
+        unsigned int pageOffset = virtualAddr%PageSize;
+        unsigned int frameNumber = pageTable[pageNumber].physicalPage;
+        int physicalAddr = frameNumber*PageSize + pageOffset;
+        return physicalAddr;
 }

@@ -63,7 +63,7 @@ void childFunction(int pid) {
 
     currentThread->space->RestoreState();
     
-    int pcReg = machine->ReadRegister(34);
+    int pcReg = machine->ReadRegister(PCReg);
     printf("Process [%d] Fork: start at address [%d] with [%d] pages memory\n", 
            pid, pcReg, currentThread->space->GetNumPages());
 
@@ -113,10 +113,13 @@ int doFork(int function) {
 
      // 8. Restore register state of parent user-level process
     currentThread->RestoreUserState();
-
     // 7. Call thread->fork on child
     childThread->Fork(childFunction, childPCB->pid);
 
+    // Read the program counter register
+    // int pcreg = machine->ReadRegister(PCReg);
+
+    // Log child creation information
 
     return childPCB->pid;
 
@@ -200,7 +203,7 @@ int doExec(char* filename) {
 
     // 5. Check if Addrspace creation was successful
     if(space->valid != true) {
-    printf("Could not create AddrSpace\n");
+        printf("Could not create AddrSpace \n");
         return -1;
     }
 
@@ -224,17 +227,26 @@ int doExec(char* filename) {
 }
 
 
-char* translate(int virtAddr) {
+char* translate(int virtualAddr) {
+    int i = 0;
+    char* str = new char[256];
+    unsigned int physicalAddr = currentThread->space->Translate(virtualAddr);
 
-    unsigned int pageNumber = virtAddr / 128;
-    unsigned int pageOffset = virtAddr % 128;
-    unsigned int frameNumber = machine->pageTable[pageNumber].physicalPage;
-    unsigned int physicalAddr = frameNumber*128 + pageOffset;
+    // Need to get one byte at a time since the string may straddle multiple pages that are not guaranteed to be contiguous in the physicalAddr space
+    bcopy(&(machine->mainMemory[physicalAddr]),&str[i],1);
+    while(str[i] != '\0' && i != 256-1)
+    {
+        virtualAddr++;
+        i++;
+        physicalAddr = currentThread->space->Translate(virtualAddr);
+        bcopy(&(machine->mainMemory[physicalAddr]),&str[i],1);
+    }
+    if(i == 256-1 && str[i] != '\0')
+    {
+        str[i] = '\0';
+    }
 
-    char *string = &(machine->mainMemory[physicalAddr]);
-
-    return string;
-
+    return str;
 }
 
 void
