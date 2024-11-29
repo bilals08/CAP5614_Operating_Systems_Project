@@ -112,20 +112,28 @@ AddrSpace::AddrSpace(OpenFile *executable)
     // bzero(machine->mainMemory, size);
 
 // then, copy in the code and data segments into memory
+    // then, copy in the code and data segments into memory
     if (noffH.code.size > 0) {
-        DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", 
+        DEBUG('a', "Initializing code segment, at 0x%x, size %d\n",
 			noffH.code.virtualAddr, noffH.code.size);
-        executable->ReadAt(&(machine->mainMemory[noffH.code.virtualAddr]),
-			noffH.code.size, noffH.code.inFileAddr);
+        ReadFile(executable, noffH.code.inFileAddr, noffH.code.virtualAddr, noffH.code.size);
     }
     if (noffH.initData.size > 0) {
-        DEBUG('a', "Initializing data segment, at 0x%x, size %d\n", 
+        DEBUG('a', "Initializing data segment, at 0x%x, size %d\n",
 			noffH.initData.virtualAddr, noffH.initData.size);
-        executable->ReadAt(&(machine->mainMemory[noffH.initData.virtualAddr]),
-			noffH.initData.size, noffH.initData.inFileAddr);
+        ReadFile(executable, noffH.initData.inFileAddr, noffH.initData.virtualAddr, noffH.initData.size);
     }
 
     valid = true;
+}
+
+void AddrSpace::ReadFile(OpenFile *file, int offset, int virtualAddr, int size) {
+    int counter = 0;
+    while( counter < size) {
+        file->ReadAt(&(machine->mainMemory[Translate(virtualAddr+counter)]),
+            1, offset+counter);
+        counter++;
+    }
 }
 
 TranslationEntry* AddrSpace::GetPageTable() {
@@ -183,7 +191,15 @@ AddrSpace::AddrSpace(AddrSpace* space)
 
 AddrSpace::~AddrSpace()
 {
-   delete pageTable;
+   
+    // First ensure that we deallocate all physical pages
+    for (int i = 0; i < numPages; i++) {
+        mm->DeallocatePage(pageTable[i].physicalPage);
+    }
+
+    // Then delete the page table array after all pages have been deallocated
+    delete pageTable;  // Use delete[] if pageTable was allocated with new[]
+
 }
 
 //----------------------------------------------------------------------

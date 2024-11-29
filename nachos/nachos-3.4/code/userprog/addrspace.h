@@ -37,6 +37,7 @@ class AddrSpace {
     unsigned int Translate(unsigned int virtualAddr);
     PCB* pcb;
     bool valid;
+    void ReadFile(OpenFile *file, int offset, int virtualAddr, int size); // Read from file into a user process' virtual address space.
 
   private:
     TranslationEntry *pageTable;	// Assume linear page table translation
