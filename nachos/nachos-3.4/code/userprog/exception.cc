@@ -195,6 +195,7 @@ int doExec(char* filename) {
         return -1;
     }
 
+    printf("Exec Program: [%d] loading %s\n", currentThread->pid, filename);
     // 2. Delete current address space but store current PCB first if using in Step 5.
     PCB* pcb = currentThread->space->pcb;
 
@@ -213,12 +214,11 @@ int doExec(char* filename) {
     // 6. Set the PCB for the new addrspace - reused from deleted address space
     space->pcb = pcb;
 
+
     // 7. Set the addrspace for currentThread
     currentThread->space = space;
     // 8. Initialize registers for new addrspace
     space->InitRegisters();		// set the initial register values
-
-    // delete executable;
 
     // currentThread->RestoreUserState();
 

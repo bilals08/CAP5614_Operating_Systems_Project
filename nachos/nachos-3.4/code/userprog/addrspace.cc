@@ -123,6 +123,11 @@ AddrSpace::AddrSpace(OpenFile *executable)
 			noffH.initData.virtualAddr, noffH.initData.size);
         ReadFile(executable, noffH.initData.inFileAddr, noffH.initData.virtualAddr, noffH.initData.size);
     }
+    int codeSize = noffH.code.size;
+    int dataSize = noffH.initData.size;
+    int bssSize = noffH.uninitData.size;
+    printf("Loaded Program: [%d] code | [%d] data | [%d] bss\n",
+           codeSize, dataSize, bssSize);
 
     valid = true;
 }

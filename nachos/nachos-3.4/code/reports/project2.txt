@@ -1,0 +1,11 @@
+Members:
+- Muhammad Bilal Shabbir
+- Aakif Ahamath Mohamed Ihsanullah
+- Robert Orfao
+
+For Fork and exec, We implemented all the code and the helper classes.
+For Join, Kill, Exit, and Yield, we implemented all the desired code.
+We have put all the tests, and tested our code for each call.
+
+
+Each call is working perfectly, and Each test is running.
