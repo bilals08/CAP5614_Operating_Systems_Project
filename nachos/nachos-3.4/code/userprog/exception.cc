@@ -72,6 +72,7 @@ void childFunction(int pid) {
 }
 
 void doExit(int status) {
+     printf("Process [%d] exits with [%d]\n", currentThread->pid, status);
     delete currentThread->space;
     currentThread->Finish();
     currentThread->space->pcb->exitStatus = status;
@@ -103,6 +104,7 @@ int doFork(int function) {
     childPCB->thread = childThread;
     // childThread->space->pcb = childPCB;
     childPCB->parent = parentPCB;
+    childThread->pid = childPCB->pid;
     parentPCB->AddChild(childPCB);
 
     // machine->ReadRegister(PCReg)
@@ -155,18 +157,21 @@ int doKill(int pid)
     PCB* pcb = pcbManager->GetPCB(pid); // Retrieve the PCB for the given PID
     if (pcb == NULL) 
     {
+        printf("Process [%d] cannot kill process [%d]: doesn't exist\n", currentThread->pid, pid);
         return -1; // Invalid PID
     }
 
     // 2. IF pid is self, then just exit the process
     if (pcb == currentThread->space->pcb) 
     {
+        printf("Process [%d] killed process [%d]\n", currentThread->pid, pid);
         doExit(0); // Exit the current process
         return 0;
     }
 
     // 3. Valid kill, pid exists and not self, do cleanup similar to Exit
     // However, change references from currentThread to the target thread
+    printf("Process [%d] killed process [%d]\n", currentThread->pid, pid);
     Thread* targetThread = pcb->thread; // Access the thread associated with the target PCB
     scheduler->RemoveThread(targetThread);
 
@@ -261,21 +266,26 @@ ExceptionHandler(ExceptionType which)
     int type = machine->ReadRegister(2);
 
     if ((which == SyscallException) && (type == SC_Halt)) {
+        printf("System Call: [%d] invoked Halt.\n", currentThread->pid);
         DEBUG('a', "Shutdown, initiated by user program.\n");
         interrupt->Halt();
     } else if ((which == SyscallException) && (type == SC_Yield)) {
-         DEBUG('a', "System Call: invoked Yield.\n");
+        printf("System Call: [%d] invoked Yield.\n", currentThread->pid);
+        DEBUG('a', "System Call: invoked Yield.\n");
         doYield();
         incrementPC();
     } else if ((which == SyscallException) && (type == SC_Exit)) {
+        printf("System Call: [%d] invoked Exit.\n", currentThread->pid);
         DEBUG('a', "Exit system call initiated by user program with status %d.\n", machine->ReadRegister(4));
         doExit(machine->ReadRegister(4));
     } else if ((which == SyscallException) && (type == SC_Fork)) {
+        printf("System Call: [%d] invoked Fork.\n", currentThread->pid);
         DEBUG('a', "Fork system call initiated by user program.\n");
         int ret = doFork(machine->ReadRegister(4));
         machine->WriteRegister(2, ret);
         incrementPC();
     }  else if ((which == SyscallException) && (type == SC_Exec)) {
+        printf("System Call: [%d] invoked Exec.\n", currentThread->pid);
          DEBUG('a', "Exec system call initiated by user program.\n");
         int virtAddr = machine->ReadRegister(4);
         char* fileName = translate(virtAddr);
@@ -283,11 +293,13 @@ ExceptionHandler(ExceptionType which)
         machine->WriteRegister(2, ret);
         incrementPC();
     }else if ((which == SyscallException) && (type == SC_Join)) {
+        printf("System Call: [%d] invoked Join.\n", currentThread->pid);
         DEBUG('a', "Join system call initiated by user program.\n");
         int ret = doJoin(machine->ReadRegister(4));
         machine->WriteRegister(2, ret);
         incrementPC();
     } else if ((which == SyscallException) && (type == SC_Kill)) {
+        printf("System Call: [%d] invoked Kill.\n", currentThread->pid);
         DEBUG('a', "Kill system call initiated by user program.\n");
         int ret = doKill(machine->ReadRegister(4));
         machine->WriteRegister(2, ret);
